@@ -4,8 +4,9 @@
 
 <div class = "nav">
     <div style="float: left; margin-left: 40px; margin-top: 18px;"><a href="/"><img src="/static/gyftlogo.jpeg" height="60px" width="165px"></a></div>
-  	<div style="float: left; margin-left: 0px; margin-top: 18px;"><a href="/log_in"><img src="/static/login.jpg" height="60px" width="165px"></a></div>
-  	<div style="float: left; margin-left: 0px; margin-top: 18px;"><a href="/cities"><img src="/static/city.jpg" height="60px" width="165px"></a></div>
+  	{% if username %}<div style="float: left; margin-left: 0px; margin-top: 18px;"><a href="/cities"><img src="/static/city.jpg" height="60px" width="165px"></a></div>
+  	{% else %}<div style="float: left; margin-left: 0px; margin-top: 18px;"><a href="/log_in"><img src="/static/login.jpg" height="60px" width="165px"></a></div>
+  	{% endif %}
 </div>
 
 <div class="maincontent">

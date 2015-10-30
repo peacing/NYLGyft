@@ -5,9 +5,13 @@ from flask.ext.moment import Moment
 from flask.ext.wtf import Form
 from wtforms import StringField, SubmitField, SelectField, PasswordField
 from wtforms.validators import Required
+import csv
+import json
+import requests
+from requests.auth import HTTPBasicAuth
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'hard to guess string'
+app.config['SECRET_KEY'] = 'hard to guess string6'
 
 manager = Manager(app)
 bootstrap = Bootstrap(app)
@@ -21,8 +25,8 @@ class CityPick(Form):
 
 class NameForm(Form):
     name = StringField('Client Name:', validators=[Required()])
-    address = StringField('Address:', validators=[Required()])
-    gift = SelectField('Gift:', choices=[('Wine', 'Wine Bottle'),('Baby', 'Diapers'),('Dog', 'Invisible Dog Fence')])
+    address = StringField('Dropoff Address:', validators=[Required()])
+    gift = SelectField('Gift:', choices=[('Wine', 'Wine Bottle'),('Diapers', 'Diapers'),('Crystal Stemware', 'Crystal Stemware')])
     pmessage = StringField('Personalized Message:', validators=[Required()])
     submit = SubmitField('Submit')
     
@@ -43,7 +47,7 @@ def internal_server_error(e):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('index.html', username=session.get('username'))
 
 @app.route('/cities', methods=['GET', 'POST'])
 def cities():
@@ -55,26 +59,6 @@ def cities():
         return redirect('/submit')
     return render_template('cities.html', form=form, city=city)
 
-#@app.route('/', methods=['GET', 'POST'])
-#def index():
-#    address = None
-#    gift = None
-#    pmessage = None
-#    name = None
-#    form = NameForm()
-#    if form.validate_on_submit():
-#        name = form.name.data
-#        address = form.address.data
-#        gift = form.gift.data
-#        pmessage = form.pmessage.data
-#        #if old_name is not None and old_name != form.name.data:
-#            #flash('Looks like you have changed your name!')
-#        form.name.data = ''
-#        form.address.data = ''
-#        form.gift.data = ''
-#        form.pmessage.data = ''
-#        return redirect('/submit')
-#    return render_template('index.html', form=form, name=name, address=address, gift=gift, pmessage=pmessage)
     
 #@app.route('/user/<name>')
 #def user(name):
@@ -90,7 +74,9 @@ def submit():
     if form.validate_on_submit():
         name = form.name.data
         address = form.address.data
+        session['dropoff_address'] = form.address.data
         gift = form.gift.data
+        session['gift'] = form.gift.data
         pmessage = form.pmessage.data
         #if old_name is not None and old_name != form.name.data:
             #flash('Looks like you have changed your name!')
@@ -98,8 +84,34 @@ def submit():
         form.address.data = ''
         form.gift.data = ''
         form.pmessage.data = ''
-        return redirect('/congrats')
+        return redirect('/postmates_delivery')
     return render_template('submit.html', form=form, name=name, address=address, gift=gift, pmessage=pmessage)
+    
+@app.route('/postmates_delivery')
+def postmates_delivery():
+
+    # Preparing API call
+    PM_Test_APIKey = 'd184ecab-5f46-42fd-bbfc-28b73b88cf4e'
+    PM_cust_id = 'cus_KAay_YCGWhyi_k'
+    url = 'https://api.postmates.com'
+    url_delivery = url + '/v1/customers/' + PM_cust_id + '/delivery_quotes'
+    headers = {'user': 'd184ecab-5f46-42fd-bbfc-28b73b88cf4e'}
+    dropoff_address = session.get('dropoff_address')
+    data = {'pickup_address': '51 Madison Avenue New York City, NY 10010',
+    'dropoff_address': dropoff_address}
+    
+    # Sending API request
+    resp = requests.post(url_delivery, data=data, auth=HTTPBasicAuth('d184ecab-5f46-42fd-bbfc-28b73b88cf4e', ''))
+
+    # Parsing API response
+    rj = resp.json()
+    c_vals = (rj['created'].lstrip('0123456789-').lstrip('T').rstrip('Z')).split(':')
+    eta_vals = (rj['dropoff_eta'].lstrip('0123456789-').lstrip('T').rstrip('Z')).split(':')
+    fee = ('$'+str(int(rj['fee'])/100.0)+'0')[:6]
+
+    # Return fee, request time, and expected delivery time (eta)
+    #return str(json.dumps({'fee': fee, 'created':str(int(c_vals[0]) - 5) +':'+ c_vals[1] +':'+ c_vals[2], 'eta': str(int(eta_vals[0]) - 5) +':'+ eta_vals[1] +':'+ eta_vals[2]}))
+    return render_template('postmates_delivery.html', eta=eta_vals, fee=fee, drop_address=session.get('dropoff_address'), item=session.get('gift'))
     
 @app.route('/congrats')
 def congrats():
@@ -111,12 +123,12 @@ def log_in():
     password = None
     form = LoginForm()
     if form.validate_on_submit():
-        username = form.username.data
+        session['username'] = form.username.data
         password = form.password.data
         form.username.data = ''
         form.password.data = ''
-        return redirect
-    return render_template('test.html')
+        return redirect('/')
+    return render_template('log_in.html', form=form, username=session.get('username'), password=password)
     
 
 
