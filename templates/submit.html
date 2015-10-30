@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block content %}
+
+<div class = "nav">
+    <div style="float: left; margin-left: 40px; margin-top: 18px;"><a href="/"><img src="/static/gyftlogo.jpeg" height="60px" width="165px"></a>
+</div>
+
+<div class="city">
+    {{ wtf.quick_form(form) }}
+</div>
+
+
+{% endblock %}
