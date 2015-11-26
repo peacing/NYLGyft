@@ -11,7 +11,7 @@ import requests
 from requests.auth import HTTPBasicAuth
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'hard to guess string6'
+app.config['SECRET_KEY'] = 'hard to guess string12'
 
 manager = Manager(app)
 bootstrap = Bootstrap(app)
